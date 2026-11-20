@@ -1,0 +1,85 @@
+name: Deploy QuickJob to VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Construire le JAR
+        # Tests ignores : les tests d'integration necessitent Testcontainers + Docker (PostGIS).
+        # Pour reactiver : retirer -DskipTests et ajouter un service Docker dans le workflow.
+        run: ./mvnw -B clean package -DskipTests
+
+      - name: Preparer le JAR sous son nom de runtime
+        # Le build produit QuickJob-0.0.1-SNAPSHOT.jar ; le service systemd attend quickjob-0.0.1.jar.
+        run: |
+          JAR=$(ls target/*.jar | grep -vE '(-plain|-sources|-javadoc)\.jar$' | head -n1)
+          echo "JAR executable detecte : $JAR"
+          cp "$JAR" target/quickjob-0.0.1.jar
+
+      - name: Copier le JAR vers le VPS (dossier tampon)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          source: "target/quickjob-0.0.1.jar"
+          target: "/root/quickjob-api/incoming/"
+          strip_components: 1
+
+      - name: Deployer et redemarrer le service
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd /root/quickjob-api
+
+            # 1. Sauvegarde de la version en cours (filet de rollback)
+            if [ -f quickjob-0.0.1.jar ]; then
+              cp quickjob-0.0.1.jar quickjob-0.0.1.jar.bak
+            fi
+
+            # 2. Bascule atomique vers la nouvelle version
+            mv incoming/quickjob-0.0.1.jar quickjob-0.0.1.jar
+
+            # 3. Redemarrage du service
+            systemctl restart quickjob.service
+
+            # 4. Controle de stabilite SANS Actuator :
+            #    on verifie que systemd n'a pas eu a relancer le service (= pas de crash au demarrage).
+            #    NRestarts ne bouge pas lors d'un restart manuel, seulement lors d'un redemarrage AUTO apres crash.
+            sleep 10
+            R1=$(systemctl show -p NRestarts --value quickjob.service)
+            sleep 60
+            R2=$(systemctl show -p NRestarts --value quickjob.service)
+
+            if systemctl is-active --quiet quickjob.service && [ "$R1" = "$R2" ]; then
+              echo "Deploiement reussi - service stable."
+            else
+              echo "Instabilite detectee (crash au demarrage) - retour a la version precedente."
+              if [ -f quickjob-0.0.1.jar.bak ]; then
+                mv quickjob-0.0.1.jar.bak quickjob-0.0.1.jar
+                systemctl restart quickjob.service
+              fi
+              exit 1
+            fi

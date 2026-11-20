@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__acp__Edit",
+      "mcp__acp__Write",
+      "Bash(./mvnw verify:*)",
+      "Bash(./mvnw help:effective-pom:*)",
+      "Bash(./mvnw compile:*)",
+      "Bash(./mvnw spring-boot:run:*)",
+      "Bash(jar tf:*)",
+      "Bash(find:*)",
+      "Bash(jar xf:*)",
+      "Bash(javap:*)",
+      "Bash(./mvnw test:*)",
+      "Bash(git status:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(./mvnw dependency:tree:*)"
+    ]
+  }
+}

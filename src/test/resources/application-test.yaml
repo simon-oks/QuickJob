@@ -1,0 +1,28 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    contexts: test
+
+quickjob:
+  jwt:
+    secret: test-secret-key-for-testing-only-must-be-at-least-256-bits-long!!
+    access-token-expiration-minutes: 15
+    refresh-token-expiration-days: 30
+  mission:
+    min-duration: 60
+    max-duration: 120
+    max-advance-hours: 48
+    default-search-radius-meters: 5000
+    max-search-radius-meters: 20000
+    max-required-workers: 5
+  money:
+    min-remuneration:
+      XOF: 500
+      GHS: 5
+    platform-commission-percent: 10
+  notification:
+    location-freshness-minutes: 30
