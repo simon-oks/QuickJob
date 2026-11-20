@@ -24,5 +24,3 @@ quickjob:
       XOF: 500
       GHS: 5
     platform-commission-percent: 10
-  notification:
-    location-freshness-minutes: 30
