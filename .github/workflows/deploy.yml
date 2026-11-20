@@ -23,7 +23,9 @@ jobs:
       - name: Construire le JAR
         # Tests ignores : les tests d'integration necessitent Testcontainers + Docker (PostGIS).
         # Pour reactiver : retirer -DskipTests et ajouter un service Docker dans le workflow.
-        run: ./mvnw -B clean package -DskipTests
+        run: |
+          chmod +x mvnw
+          ./mvnw -B clean package -DskipTests
 
       - name: Preparer le JAR sous son nom de runtime
         # Le build produit QuickJob-0.0.1-SNAPSHOT.jar ; le service systemd attend quickjob-0.0.1.jar.
