@@ -72,9 +72,27 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        IdentifierInfo info = resolveIdentifier(request.phoneNumber(), request.email());
+        boolean hasPhone = request.phoneNumber() != null && !request.phoneNumber().isBlank();
+        boolean hasEmail = request.email() != null && !request.email().isBlank();
 
-        boolean valid = otpService.verify(info.identifier(), request.otpCode());
+        if (!hasPhone && !hasEmail) {
+            throw new BusinessException(
+                    ErrorCode.AUTH_IDENTIFIER_REQUIRED,
+                    "auth.identifier_required",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        // L'OTP a été envoyé sur un seul canal : on tente les deux pour trouver le bon
+        boolean valid = false;
+        String verifiedChannel = null;
+        if (hasPhone && otpService.verify(request.phoneNumber(), request.otpCode())) {
+            valid = true;
+            verifiedChannel = "sms";
+        }
+        if (!valid && hasEmail && otpService.verify(request.email(), request.otpCode())) {
+            valid = true;
+            verifiedChannel = "email";
+        }
         if (!valid) {
             throw new BusinessException(
                     ErrorCode.AUTH_INVALID_OTP,
@@ -82,23 +100,27 @@ public class AuthService {
                     HttpStatus.UNAUTHORIZED);
         }
 
-        if (findUserByIdentifier(info).isPresent()) {
-            String errorCode = "sms".equals(info.channel())
-                    ? ErrorCode.AUTH_PHONE_ALREADY_REGISTERED
-                    : ErrorCode.AUTH_EMAIL_ALREADY_REGISTERED;
-            String messageKey = "sms".equals(info.channel())
-                    ? "auth.phone_already_registered"
-                    : "auth.email_already_registered";
-            throw new BusinessException(errorCode, messageKey, HttpStatus.CONFLICT);
+        // Vérifier l'unicité du téléphone et de l'email
+        if (hasPhone && userRepository.findByPhoneNumber(request.phoneNumber()).isPresent()) {
+            throw new BusinessException(
+                    ErrorCode.AUTH_PHONE_ALREADY_REGISTERED,
+                    "auth.phone_already_registered",
+                    HttpStatus.CONFLICT);
+        }
+        if (hasEmail && userRepository.findByEmail(request.email()).isPresent()) {
+            throw new BusinessException(
+                    ErrorCode.AUTH_EMAIL_ALREADY_REGISTERED,
+                    "auth.email_already_registered",
+                    HttpStatus.CONFLICT);
         }
 
         User user = new User(UUID.randomUUID(), request.phoneNumber(), request.displayName());
-        if ("sms".equals(info.channel())) {
-            user.setPhoneVerified(true);
+        if (hasPhone) {
+            user.setPhoneVerified("sms".equals(verifiedChannel));
         }
-        if ("email".equals(info.channel())) {
+        if (hasEmail) {
             user.setEmail(request.email());
-            user.setEmailVerified(true);
+            user.setEmailVerified("email".equals(verifiedChannel));
         }
         if (request.preferredLanguage() != null) {
             user.setPreferredLanguage(request.preferredLanguage());
@@ -106,8 +128,9 @@ public class AuthService {
         userRepository.save(user);
 
         Locale locale = Locale.forLanguageTag(user.getPreferredLanguage());
-        messageSenderRegistry.getSender(info.channel())
-                .sendWelcome(info.identifier(), user.getDisplayName(), locale);
+        messageSenderRegistry.getSender(verifiedChannel)
+                .sendWelcome("sms".equals(verifiedChannel) ? request.phoneNumber() : request.email(),
+                        user.getDisplayName(), locale);
 
         return jwtService.generateTokenPair(user);
     }
