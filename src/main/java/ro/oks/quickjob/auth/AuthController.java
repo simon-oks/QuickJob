@@ -34,9 +34,9 @@ public class AuthController {
     }
 
     @PostMapping("/otp/request")
-    @Operation(summary = "Demander un code OTP par SMS")
+    @Operation(summary = "Demander un code OTP par SMS ou email")
     public ResponseEntity<Map<String, String>> requestOtp(@Valid @RequestBody RequestOtpRequest request) {
-        authService.requestOtp(request.phoneNumber());
+        authService.requestOtp(request);
         return ResponseEntity.ok(Map.of("message", messageService.get("auth.otp_sent")));
     }
 
@@ -48,9 +48,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Se connecter avec numéro de téléphone + code OTP")
+    @Operation(summary = "Se connecter avec numéro de téléphone ou email + code OTP")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody VerifyOtpRequest request) {
-        AuthResponse response = authService.verifyOtpAndLogin(request.phoneNumber(), request.otpCode());
+        AuthResponse response = authService.verifyOtpAndLogin(request);
         return ResponseEntity.ok(response);
     }
 

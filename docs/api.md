@@ -79,7 +79,7 @@ POST /api/v1/auth/otp/request
 
 **Rate limit** : 5 req/min par IP.
 
-**Body** :
+**Body** (fournir `phoneNumber` OU `email`, pas les deux) :
 
 ```json
 {
@@ -87,9 +87,20 @@ POST /api/v1/auth/otp/request
 }
 ```
 
+ou :
+
+```json
+{
+  "email": "jean@example.com"
+}
+```
+
 | Champ | Type | Requis | Validation |
 |-------|------|--------|------------|
-| `phoneNumber` | string | oui | E.164 : `^\+\d{10,15}$` |
+| `phoneNumber` | string | conditionnel | E.164 : `^\+\d{10,15}$` |
+| `email` | string | conditionnel | Email valide, max 255 car. |
+
+> Exactement un des deux champs doit etre fourni. Si telephone : OTP envoye par SMS. Si email : OTP envoye par email.
 
 **Reponse** `200` :
 
@@ -98,6 +109,12 @@ POST /api/v1/auth/otp/request
   "message": "Code OTP envoyé"
 }
 ```
+
+**Erreurs possibles** :
+
+| Code | HTTP | Cause |
+|------|------|-------|
+| `AUTH_IDENTIFIER_REQUIRED` | 400 | Aucun identifiant fourni, ou les deux fournis |
 
 ---
 
@@ -109,7 +126,7 @@ POST /api/v1/auth/register
 
 **Rate limit** : 10 req/min par IP.
 
-**Body** :
+**Body** (fournir `phoneNumber` OU `email`, pas les deux) :
 
 ```json
 {
@@ -120,9 +137,21 @@ POST /api/v1/auth/register
 }
 ```
 
+ou :
+
+```json
+{
+  "email": "jean@example.com",
+  "displayName": "Jean Kodjo",
+  "otpCode": "123456",
+  "preferredLanguage": "fr"
+}
+```
+
 | Champ | Type | Requis | Validation |
 |-------|------|--------|------------|
-| `phoneNumber` | string | oui | E.164 |
+| `phoneNumber` | string | conditionnel | E.164 |
+| `email` | string | conditionnel | Email valide, max 255 car. |
 | `displayName` | string | oui | 2-100 caracteres |
 | `otpCode` | string | oui | 6 chiffres : `^\d{6}$` |
 | `preferredLanguage` | string | non | `fr` ou `en` (defaut : `fr`) |
@@ -148,7 +177,9 @@ POST /api/v1/auth/register
 | Code | HTTP | Cause |
 |------|------|-------|
 | `AUTH_PHONE_ALREADY_REGISTERED` | 409 | Numero deja inscrit |
+| `AUTH_EMAIL_ALREADY_REGISTERED` | 409 | Email deja inscrit |
 | `AUTH_INVALID_OTP` | 400 | Code OTP incorrect ou expire |
+| `AUTH_IDENTIFIER_REQUIRED` | 400 | Aucun identifiant fourni, ou les deux fournis |
 
 ---
 
@@ -160,7 +191,7 @@ POST /api/v1/auth/login
 
 **Rate limit** : 10 req/min par IP.
 
-**Body** :
+**Body** (fournir `phoneNumber` OU `email`, pas les deux) :
 
 ```json
 {
@@ -169,9 +200,19 @@ POST /api/v1/auth/login
 }
 ```
 
+ou :
+
+```json
+{
+  "email": "jean@example.com",
+  "otpCode": "123456"
+}
+```
+
 | Champ | Type | Requis | Validation |
 |-------|------|--------|------------|
-| `phoneNumber` | string | oui | E.164 |
+| `phoneNumber` | string | conditionnel | E.164 |
+| `email` | string | conditionnel | Email valide |
 | `otpCode` | string | oui | 6 chiffres |
 
 **Reponse** `200` : meme format que `register`.
@@ -243,10 +284,12 @@ GET /api/v1/users/me
 {
   "id": "uuid",
   "phoneNumber": "+22890123456",
+  "email": "jean@example.com",
   "displayName": "Jean Kodjo",
   "roles": ["CLIENT", "WORKER"],
   "workerCategories": ["DELIVERY", "HANDLING"],
   "phoneVerified": true,
+  "emailVerified": true,
   "preferredLanguage": "fr",
   "clientRating": {
     "averageScore": 4.5,
@@ -263,11 +306,13 @@ GET /api/v1/users/me
 | Champ | Type | Description |
 |-------|------|-------------|
 | `id` | UUID | Identifiant unique |
-| `phoneNumber` | string | Numero E.164 |
+| `phoneNumber` | string? | Numero E.164 (`null` si inscription par email) |
+| `email` | string? | Adresse email (`null` si inscription par telephone) |
 | `displayName` | string | Nom affiche |
 | `roles` | string[] | `CLIENT`, `WORKER` ou les deux |
 | `workerCategories` | string[] | Categories pour lesquelles le worker est disponible (vide = polyvalent) |
 | `phoneVerified` | boolean | Telephone verifie |
+| `emailVerified` | boolean | Email verifie |
 | `preferredLanguage` | string | Langue preferee (`fr` ou `en`) |
 | `clientRating` | RatingStats | Moyenne et nombre d'avis recus en tant que client |
 | `workerRating` | RatingStats | Moyenne et nombre d'avis recus en tant que worker |
@@ -1039,6 +1084,8 @@ POST /api/v1/missions/{missionId}/ratings
 | `AUTH_INVALID_OTP` | 400 | Code OTP incorrect |
 | `AUTH_USER_NOT_REGISTERED` | 404 | Utilisateur non inscrit |
 | `AUTH_PHONE_ALREADY_REGISTERED` | 409 | Numero deja enregistre |
+| `AUTH_EMAIL_ALREADY_REGISTERED` | 409 | Email deja enregistre |
+| `AUTH_IDENTIFIER_REQUIRED` | 400 | Identifiant manquant ou les deux fournis |
 | `AUTH_ACCESS_DENIED` | 403 | Acces refuse |
 | **User** | | |
 | `USER_NOT_FOUND` | 404 | Utilisateur introuvable |

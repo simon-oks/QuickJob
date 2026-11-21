@@ -17,10 +17,12 @@ public class UserMapper {
         return new UserResponse(
                 user.getId(),
                 user.getPhoneNumber(),
+                user.getEmail(),
                 user.getDisplayName(),
                 user.getRoleSet(),
                 user.getWorkerCategories(),
                 user.isPhoneVerified(),
+                user.isEmailVerified(),
                 user.getPreferredLanguage(),
                 ratingService.getClientRatingStats(user.getId()),
                 ratingService.getWorkerRatingStats(user.getId()),

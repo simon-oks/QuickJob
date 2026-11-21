@@ -33,9 +33,17 @@ public class User {
     @Id
     private UUID id;
 
-    @Column(name = "phone_number", nullable = false, unique = true, length = 20)
+    @Column(name = "phone_number", unique = true, length = 20)
     @Setter
     private String phoneNumber;
+
+    @Column(name = "email", unique = true, length = 255)
+    @Setter
+    private String email;
+
+    @Column(name = "email_verified", nullable = false)
+    @Setter
+    private boolean emailVerified;
 
     @Column(name = "display_name", nullable = false, length = 100)
     @Setter

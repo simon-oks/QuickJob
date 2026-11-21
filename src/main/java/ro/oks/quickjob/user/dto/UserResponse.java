@@ -11,10 +11,12 @@ import ro.oks.quickjob.user.Role;
 public record UserResponse(
         UUID id,
         String phoneNumber,
+        String email,
         String displayName,
         Set<Role> roles,
         Set<MissionCategory> workerCategories,
         boolean phoneVerified,
+        boolean emailVerified,
         String preferredLanguage,
         RatingStats clientRating,
         RatingStats workerRating,

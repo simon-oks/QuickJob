@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Welcome</title>
+</head>
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background-color:#f4f4f4;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:40px 0;">
+    <tr>
+        <td align="center">
+            <table width="480" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;padding:40px;">
+                <tr>
+                    <td align="center" style="padding-bottom:24px;">
+                        <h1 style="color:#1a1a2e;margin:0;font-size:24px;" th:text="${appName}">QuickJob</h1>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color:#333333;font-size:16px;line-height:24px;">
+                        <p>Hello <strong th:text="${displayName}">User</strong>,</p>
+                        <p>Welcome to <span th:text="${appName}">QuickJob</span>!</p>
+                        <p>Your account has been created successfully. You can now publish or search for micro-missions near you.</p>
+                        <p>See you soon,<br/>The <span th:text="${appName}">QuickJob</span> team</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

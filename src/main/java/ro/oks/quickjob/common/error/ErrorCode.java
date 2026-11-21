@@ -27,6 +27,8 @@ public final class ErrorCode {
     public static final String AUTH_INVALID_OTP = "AUTH_INVALID_OTP";
     public static final String AUTH_USER_NOT_REGISTERED = "AUTH_USER_NOT_REGISTERED";
     public static final String AUTH_PHONE_ALREADY_REGISTERED = "AUTH_PHONE_ALREADY_REGISTERED";
+    public static final String AUTH_EMAIL_ALREADY_REGISTERED = "AUTH_EMAIL_ALREADY_REGISTERED";
+    public static final String AUTH_IDENTIFIER_REQUIRED = "AUTH_IDENTIFIER_REQUIRED";
     public static final String AUTH_ACCESS_DENIED = "AUTH_ACCESS_DENIED";
 
     // Application
